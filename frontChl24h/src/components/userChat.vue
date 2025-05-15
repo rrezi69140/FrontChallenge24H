@@ -128,156 +128,122 @@ export default {
 </template>
 
 <style scoped>
-/* Boutons zones */
+.container-Fond {
+  width: 28vw;
+  height: 90vh;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow: 0 4px 10px rgba(0, 0, 50, 0.2);
+  overflow: hidden;
+}
+
+/* Zone actuelle */
+.container-Fond > p {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+}
+
+/* Boutons de sélection de zone */
+.container-Btn-Zone {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
 .btn-select-zone {
-  width: 5vw;
-  height: 2.5vw;
-  background-color: #007BFF; /* bleu vif */
+  flex: 1 1 45%;
+  height: 2.5rem;
+  background-color: #007BFF;
   color: white;
   border: none;
   border-radius: 6px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
 .btn-select-zone:hover {
-  background-color: #0056b3; /* bleu foncé au hover */
+  background-color: #0056b3;
 }
 
-/* Conteneur principal */
-.container-Fond {
-  width: 32vw;
-  height: 55vw;
-  background: linear-gradient(135deg, #1e3c72, #2a5298); /* dégradé bleu */
-  border-radius: 12px;
-  padding: 1rem;
-  box-sizing: border-box;
+/* Username */
+.username-input {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  color: white;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  box-shadow: 0 8px 16px rgba(0, 0, 50, 0.3);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
-
-/* Texte zone actuelle */
-.container-Fond > p {
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-/* Liste des messages */
-.ListeMessage {
-  width: 100%;
-  height: 30vw;
-  background-color: #f0f4ff;
-  border-radius: 10px;
-  padding: 1rem;
-  overflow-y: auto;
-  box-shadow: inset 0 0 10px rgba(0, 123, 255, 0.15);
-  color: #333;
-  font-size: 1rem;
-}
-
-/* Message individuel */
-.message {
-  margin-bottom: 0.6rem;
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
-  background-color: #e6f0ff; /* fond très clair bleu */
-  box-shadow: 0 1px 2px rgba(0, 0, 50, 0.1);
-  color: #003366;
-  word-break: break-word;
-  font-weight: 500;
-}
-
-/* Couleurs spécifiques par zone */
-.message[zone="zone1"] {
-  background-color: #d0e7ff;
-}
-.message[zone="zone2"] {
-  background-color: #b3d1ff;
-}
-.message[zone="zone3"] {
-  background-color: #99c1ff;
-}
-.message[zone="ALL"] {
-  background-color: #cce0ff;
-}
-
-/* Zone boutons (zone + username) */
-.container-Btn-Zone {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  margin: 0.7rem 0;
-}
-
-/* Input username */
-.username-input label {
-  font-weight: 600;
-  margin-right: 0.5rem;
-}
-
 .username-input input {
-  width: 15vw;
+  flex: 1;
   padding: 0.4rem 0.6rem;
   border-radius: 6px;
   border: 1.5px solid #007bff;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: #003366;
-  outline: none;
-  transition: border-color 0.3s ease;
 }
 
-.username-input input:focus {
-  border-color: #0056b3;
+/* Messages */
+.ListeMessage {
+  flex: 1;
+  overflow-y: auto;
+  background: #f0f4ff;
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  box-shadow: inset 0 0 6px rgba(0, 123, 255, 0.2);
+  color: #333;
+}
+.message {
+  margin-bottom: 0.6rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background-color: #e6f0ff;
+  color: #003366;
 }
 
-/* Input message */
+/* Couleurs par zone */
+.message[zone="zone1"] { background-color: #d0e7ff; }
+.message[zone="zone2"] { background-color: #b3d1ff; }
+.message[zone="zone3"] { background-color: #99c1ff; }
+.message[zone="ALL"]  { background-color: #cce0ff; }
+
+/* Input + envoi */
 .container-msg-Zone {
-  width: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 0.5rem;
+  gap: 0.5rem;
 }
-
 .input-Msg {
-  width: 80%;
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
-  border-radius: 10px;
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
   border: 2px solid #007bff;
+  font-size: 0.9rem;
   color: #003366;
-  outline: none;
-  transition: border-color 0.3s ease;
 }
-
 .input-Msg:focus {
+  outline: none;
   border-color: #0056b3;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
 }
-
-/* Bouton envoyer - optionnel */
 .btn-send-message {
-  width: 18%;
-  margin-left: 0.5rem;
-  padding: 0.6rem 0;
-  font-size: 1rem;
+  width: 3rem;
   background-color: #007bff;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   color: white;
-  font-weight: 700;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-.btn-send-message:hover {
-  background-color: #0056b3;
-}
 </style>
