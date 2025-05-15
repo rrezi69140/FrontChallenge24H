@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  vue-dev:
+    build:
+      context: .
+      target: development
+    container_name: vue_dev
+    ports:
+      - "5173:5173"     # Vite dev server
+      - "24678:24678"   # HMR (Hot Module Replacement)
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "dev", "--", "--host"]
+
+  vue-prod:
+    build:
+      context: .
+      target: production
+    container_name: vue_prod
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
