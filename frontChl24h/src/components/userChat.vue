@@ -40,7 +40,7 @@ export default {
         socket.emit('UsurNameSend', this.UserName);
       }
     },
-  }, 
+  },
 };
 </script>
 
@@ -63,15 +63,19 @@ export default {
     </button>
   </div>
   <div class = "ListeMessage" >
-
+    <div
+        v-for="(message, index) in messages"
+        :key="index"
+        class="message"
+    >
+      {{ message }}
+    </div>
   </div>
 
   <div class="container-msg-Zone">
-    <input type="text" class="input-Msg">
-
-    <button class="btn-send-message">
-      envoyer
-    </button>
+    <input type="text" class="input-Msg" v-model="newMessage"
+           @keyup.enter="sendMessage"
+           placeholder="Type a message..."/>
   </div>
 
 
