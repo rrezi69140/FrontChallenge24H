@@ -11,13 +11,25 @@ export default {
       newMessage: '',
       UserName: '',
       clientId: socket.id,
+      selectedZone: 'ALL'
     };
   },
   created() {
     // message
-    socket.on('message', (message) => {
-      this.messages.push(message);
+    socket.on('message', (data) => {
+      if (this.selectedZone === 'all' || data.zone === this.selectedZone) {
+        this.messages.push({
+          text: data.text,
+          username: data.username,
+          zone: data.zone
+        });
+      }
     });
+
+    socket.on('messageHistory', (messages) => {
+      this.messages = messages;
+    });
+
 
     // connected users
     socket.on('connectedUsers', (updatedConnectedUsers) => {
@@ -28,11 +40,29 @@ export default {
   methods: {
     // envoie du nouveau message
     sendMessage() {
-      if (this.newMessage.trim() !== '') {
-        socket.emit('message', this.newMessage);
+      if (!this.UserName.trim()) return alert("Veuillez saisir un nom d'utilisateur.");
+      {   if (this.newMessage.trim() !== '') {
+        socket.emit('message', {
+          text: this.newMessage,
+          username: this.UserName,
+          zone: this.selectedZone,
+
+        });
         this.newMessage = '';
-      }
+      }}
+
     },
+
+
+
+    selectZone(zone) {
+      this.selectedZone = zone;
+      this.messages = [];
+      socket.emit('getMessages', zone);
+    },
+
+
+
 
     // envoie du nom d'utilisateur
     SetPlayerUserName() {
@@ -48,28 +78,41 @@ export default {
 
 <template>
 <div class="container-Fond">
+
+  <p style="color: white; font-weight: bold;">
+    Zone actuelle : {{ selectedZone }}
+  </p>
+
+
   <div class="container-Btn-Zone">
-    <button class="btn-select-zone" id="zone1" >
-    Zone 1
-    </button>
-    <button class="btn-select-zone" id="zone2">
-      Zone 2
-    </button>
-    <button class="btn-select-zone" id="zone3">
-    Zone 3
-    </button>
-    <button class="btn-select-zone" id="zone4">
-    ALL
-    </button>
+    <button class="btn-select-zone" @click="selectZone('zone1')">Zone 1</button>
+    <button class="btn-select-zone" @click="selectZone('zone2')">Zone 2</button>
+    <button class="btn-select-zone" @click="selectZone('zone3')">Zone 3</button>
+    <button class="btn-select-zone" @click="selectZone('ALL')">ALL</button>
+  </div>
+
+  <div class="container-Btn-Zone">
+    <div class="username-input">
+      <label for="PlayerUserName">Nom d'utilisateur :</label>
+      <input
+          type="text"
+          id="PlayerUserName"
+          v-model="UserName"
+          placeholder="Entrez votre nom..."
+          @keyup.enter="SetPlayerUserName"
+      />
+    </div>
   </div>
   <div class = "ListeMessage" >
     <div
         v-for="(message, index) in messages"
         :key="index"
         class="message"
+        :zone="message.zone"
     >
-      {{ message }}
+      <strong>[{{ message.zone.toUpperCase() }}] {{ message.username }}:</strong> {{ message.text }}
     </div>
+
   </div>
 
   <div class="container-msg-Zone">
@@ -138,4 +181,12 @@ button{
   width:4vw;
   height: 2vw;
 }
+
+
+.message[zone="zone1"] { background: #e6f7ff; }
+.message[zone="zone2"] { background: #fff4e6; }
+.message[zone="zone3"] { background: #f0fff0; }
+.message[zone="ALL"]  { background: #f0f0f0; }
+
+
 </style>
