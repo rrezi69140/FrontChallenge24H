@@ -1,203 +1,204 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-const temperature = ref(20.0)
-const humidity = ref(60.0)
-const totalRain = ref(5.0)
-const maxRain = ref(2.0)
-const avgWind = ref(3.0)
-const seismicity = ref(0.5)
-const gasConcentration = ref(100.0)
-const day = ref(1)
-const month = ref('janvier')
-const quartier = ref('zone 1')
+const temperature = ref(0)
+const humidite = ref(0)
+const pluie_totale = ref(0)
+const pluie_intensite_max = ref(0)
+const force_vent = ref(0)
+const sismicite = ref(0)
+const concentration_gaz = ref(0)
+const jour = ref(1)
+const mois = ref('janvier')
+const quartier = ref('Zone 1')
 
-const predictionResult = ref(null)
-const loading = ref(false)
-const errorMsg = ref(null)
+const lastPrediction = ref(null)
 
-const months = [
-  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
-]
+const moisOptions = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+const quartierOptions = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5']
 
-const quartiers = ['zone 1', 'zone 2', 'zone 3', 'zone 4']
+const moisMap = {
+  janvier: 1,
+  février: 2,
+  mars: 3,
+  avril: 4,
+  mai: 5,
+  juin: 6,
+  juillet: 7,
+  août: 8,
+  septembre: 9,
+  octobre: 10,
+  novembre: 11,
+  décembre: 12
+}
 
-const submitPrediction = async () => {
-  loading.value = true
-  errorMsg.value = null
-  predictionResult.value = null
+const envoyerPrediction = async () => {
   try {
-    const payload = {
-      temperature: temperature.value,
-      humidity: humidity.value,
-      total_rain: totalRain.value,
-      max_rain: maxRain.value,
-      avg_wind: avgWind.value,
-      seismicity: seismicity.value,
-      gas_concentration: gasConcentration.value,
-      day: day.value,
-      month: month.value,
-      quartier: quartier.value,
-    }
-    const res = await axios.post('http://localhost:8081/api/prediction', payload)
-    predictionResult.value = res.data
-  } catch (err) {
-    errorMsg.value = 'Erreur lors de la requête de prédiction.'
-    console.error(err)
-  } finally {
-    loading.value = false
+    const response = await axios.post('http://localhost:8000/predict', {
+      temperature: parseFloat(temperature.value),
+      humidite: parseFloat(humidite.value),
+      pluie_totale: parseFloat(pluie_totale.value),
+      pluie_intensite_max: parseFloat(pluie_intensite_max.value),
+      force_moyenne_du_vecteur_de_vent: parseFloat(force_vent.value),
+      sismicite: parseFloat(sismicite.value),
+      concentration_gaz: parseFloat(concentration_gaz.value),
+      jour: parseInt(jour.value) || 1,
+      mois: moisMap[mois.value.toLowerCase()] || 1,
+      quartier: quartier.value
+    })
+    await fetchLastPrediction()
+    alert('Prédiction envoyée avec succès !')
+  } catch (error) {
+    alert('Erreur lors de l’envoi de la prédiction.')
+    console.error(error)
   }
 }
+
+const fetchLastPrediction = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/last-prediction')
+    lastPrediction.value = response.data
+  } catch (error) {
+    console.error('Erreur récupération dernière prédiction:', error)
+  }
+}
+
+onMounted(() => {
+  fetchLastPrediction()
+})
 </script>
 
 <template>
-  <div class="prediction-container">
-    <h1>🌪️ Prédiction Catastrophes Climatiques</h1>
+  <div class="container-prediction">
+    <section class="form-section">
+      <h2>🌪️ Prédiction Catastrophes Climatiques</h2>
 
-    <form @submit.prevent="submitPrediction" class="prediction-form">
       <label>🌡️ Température (°C)
-        <input type="number" v-model.number="temperature" step="0.01" min="-50" max="60" />
+        <input type="number" step="0.01" v-model="temperature" />
       </label>
 
       <label>💧 Humidité (%)
-        <input type="number" v-model.number="humidity" step="0.01" min="0" max="100" />
+        <input type="number" step="0.01" v-model="humidite" />
       </label>
 
       <label>☔ Pluie totale (mm)
-        <input type="number" v-model.number="totalRain" step="0.01" min="0" />
+        <input type="number" step="0.01" v-model="pluie_totale" />
       </label>
 
       <label>🌧️ Pluie max (mm/h)
-        <input type="number" v-model.number="maxRain" step="0.01" min="0" />
+        <input type="number" step="0.01" v-model="pluie_intensite_max" />
       </label>
 
       <label>💨 Vent moyen
-        <input type="number" v-model.number="avgWind" step="0.01" min="0" />
+        <input type="number" step="0.01" v-model="force_vent" />
       </label>
 
       <label>🌍 Sismicité
-        <input type="number" v-model.number="seismicity" step="0.01" min="0" />
+        <input type="number" step="0.01" v-model="sismicite" />
       </label>
 
       <label>🧪 Concentration gaz
-        <input type="number" v-model.number="gasConcentration" step="0.01" min="0" />
+        <input type="number" step="0.01" v-model="concentration_gaz" />
       </label>
 
       <label>📆 Jour
-        <input type="number" v-model.number="day" min="1" max="31" />
+        <input type="number" min="1" max="31" v-model="jour" />
       </label>
 
       <label>🗓️ Mois
-        <select v-model="month">
-          <option v-for="m in months" :key="m" :value="m">{{ m }}</option>
+        <select v-model="mois">
+          <option v-for="m in moisOptions" :key="m" :value="m">{{ m }}</option>
         </select>
       </label>
 
       <label>🏘️ Quartier
         <select v-model="quartier">
-          <option v-for="q in quartiers" :key="q" :value="q">{{ q }}</option>
+          <option v-for="q in quartierOptions" :key="q" :value="q">{{ q }}</option>
         </select>
       </label>
 
-      <button type="submit" :disabled="loading">{{ loading ? 'Chargement...' : 'Prédire' }}</button>
-    </form>
+      <button @click="envoyerPrediction">Envoyer la prédiction</button>
+    </section>
 
-    <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
-
-    <div v-if="predictionResult" class="result">
-      <h2>Résultat de la prédiction :</h2>
-      <pre>{{ JSON.stringify(predictionResult, null, 2) }}</pre>
-    </div>
+    <section class="last-prediction-section">
+      <h2>Dernière prédiction</h2>
+      <div v-if="lastPrediction">
+        <p><strong>Quartier:</strong> {{ lastPrediction.quartier }}</p>
+        <p><strong>Catastrophe prédite:</strong> {{ lastPrediction.catastrophe_predite }}</p>
+      </div>
+      <div v-else>
+        <p>Aucune prédiction disponible.</p>
+      </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.prediction-container {
-  max-width: 480px;
-  margin: 2rem auto;
-  background: #f0f8ff;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 6px 18px rgba(0, 123, 255, 0.1);
+.container-prediction {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem;
+  max-width: 900px;
+  margin: auto;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #003366;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: #007BFF;
-}
-
-.prediction-form {
+.form-section, .last-prediction-section {
+  background: #f0f8ff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.prediction-form label {
+label {
   display: flex;
   flex-direction: column;
   font-weight: 600;
   font-size: 1rem;
+  color: #004085;
 }
 
-.prediction-form input,
-.prediction-form select {
-  margin-top: 0.25rem;
+input, select {
+  margin-top: 0.3rem;
   padding: 0.5rem;
-  font-size: 1rem;
-  border: 1.5px solid #007BFF;
   border-radius: 6px;
+  border: 1px solid #007bff;
+  font-size: 1rem;
   color: #003366;
   outline: none;
   transition: border-color 0.3s ease;
 }
 
-.prediction-form input:focus,
-.prediction-form select:focus {
+input:focus, select:focus {
   border-color: #0056b3;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.6);
 }
 
-button[type="submit"] {
-  background-color: #007BFF;
+button {
+  background-color: #007bff;
   color: white;
   border: none;
-  padding: 0.7rem;
-  font-size: 1.1rem;
-  font-weight: 700;
   border-radius: 8px;
+  font-weight: 700;
+  padding: 0.75rem;
   cursor: pointer;
+  font-size: 1rem;
+  margin-top: 1rem;
   transition: background-color 0.3s ease;
 }
 
-button[type="submit"]:hover {
+button:hover {
   background-color: #0056b3;
 }
 
-button[type="submit"]:disabled {
-  background-color: #99c2ff;
-  cursor: not-allowed;
-}
-
-.error-msg {
-  margin-top: 1rem;
-  color: #dc3545;
-  font-weight: 600;
-  text-align: center;
-}
-
-.result {
-  margin-top: 2rem;
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 6px 18px rgba(0, 123, 255, 0.15);
-  white-space: pre-wrap;
-  font-family: monospace;
-  font-size: 0.95rem;
+h2 {
+  color: #004085;
+  margin-bottom: 1rem;
 }
 </style>
