@@ -1,29 +1,44 @@
-<script setup lang="ts">
-import { ref, watch } from 'vue'
+<script setup>
+import { ref } from 'vue'
 import axios from 'axios'
 
-const selectedDistrict = ref<number | null>(null)
+const selectedDistrict = ref(null)
 const showPopup = ref(false)
 
-const currentAlerts = ref<string[]>([])
-const currentActivities = ref<string[]>([])
-const newAlert = ref("")
+const allAlerts = ref([])
+const allActivities = ref([])
 
-const fetchDistrictData = async (districtId: number) => {
+const filteredAlerts = ref([])
+const filteredActivities = ref([])
+
+const newAlertDescription = ref("")
+const newActivityTitle = ref("")
+const newActivityDescription = ref("")
+
+const fetchData = async () => {
   try {
-    const res = await axios.get(`/api/districts/${districtId}`)
-    currentAlerts.value = res.data.alerts || []
-    currentActivities.value = res.data.activities || []
-  } catch (error) {
-    console.error("Erreur lors de la récupération du district :", error)
-    currentAlerts.value = []
-    currentActivities.value = []
+    const alertsRes = await axios.get("http://localhost:8081/api/signal/")
+    const activitiesRes = await axios.get("http://localhost:8081/api/propActivity/")
+    allAlerts.value = alertsRes.data
+    allActivities.value = activitiesRes.data
+    filterData()
+  } catch (err) {
+    console.error("❌ Erreur récupération :", err)
+    allAlerts.value = []
+    allActivities.value = []
   }
 }
 
-const handleDistrictClick = async (districtId: number) => {
+const filterData = () => {
+  if (!selectedDistrict.value) return
+  const zone = String(selectedDistrict.value)
+  filteredAlerts.value = allAlerts.value.filter(item => item.quartier === zone)
+  filteredActivities.value = allActivities.value.filter(item => item.quartier === zone)
+}
+
+const handleDistrictClick = async (districtId) => {
   selectedDistrict.value = districtId
-  await fetchDistrictData(districtId)
+  await fetchData()
   showPopup.value = true
 }
 
@@ -32,20 +47,35 @@ const closePopup = () => {
 }
 
 const addAlert = async () => {
-  if (!newAlert.value.trim() || selectedDistrict.value === null) return
-
+  if (!newAlertDescription.value.trim() || selectedDistrict.value === null) return
   try {
-    await axios.post(`/api/districts/${selectedDistrict.value}/alerts`, {
-      alert: newAlert.value
+    await axios.post("http://localhost:8081/api/signal/", {
+      description: newAlertDescription.value,
+      quartier: String(selectedDistrict.value)
     })
-    currentAlerts.value.push(newAlert.value)
-    newAlert.value = ""
-  } catch (error) {
-    console.error("Erreur lors de l'ajout de l'alerte :", error)
+    newAlertDescription.value = ""
+    await fetchData()
+  } catch (err) {
+    console.error("❌ Erreur ajout alerte :", err)
   }
 }
 
-// Données statiques de la carte
+const addActivity = async () => {
+  if (!newActivityTitle.value.trim() || !newActivityDescription.value.trim() || selectedDistrict.value === null) return
+  try {
+    await axios.post("http://localhost:8081/api/propActivity/", {
+      titre: newActivityTitle.value,
+      description: newActivityDescription.value,
+      quartier: String(selectedDistrict.value)
+    })
+    newActivityTitle.value = ""
+    newActivityDescription.value = ""
+    await fetchData()
+  } catch (err) {
+    console.error("❌ Erreur ajout activité :", err)
+  }
+}
+
 const districts = [
   { id: 1, path: "M320,190 L380,170 L400,210 L370,260 L320,250 Z", color: "#7BC142", labelX: 355, labelY: 215 },
   { id: 2, path: "M320,250 L370,260 L350,320 L300,330 L290,290 Z", color: "#7BC142", labelX: 330, labelY: 290 },
@@ -63,14 +93,10 @@ const water = {
   color: "#B3E3F9"
 }
 </script>
-
 <template>
   <div class="map-container">
     <svg viewBox="100 100 450 350" width="100%" height="100%">
-      <!-- Zone d'eau -->
       <path :d="water.path" :fill="water.color" stroke="#fff" stroke-width="2" />
-
-      <!-- Districts -->
       <g v-for="district in districts" :key="district.id">
         <path
             :d="district.path"
@@ -93,20 +119,27 @@ const water = {
 
         <h3>🚨 Alertes</h3>
         <ul>
-          <li v-if="currentAlerts.length === 0">Aucune alerte</li>
-          <li v-for="(alert, i) in currentAlerts" :key="'alert-' + i">{{ alert }}</li>
+          <li v-if="filteredAlerts.length === 0">Aucune alerte</li>
+          <li v-for="(alert, i) in filteredAlerts" :key="'alert-' + i">{{ alert.description }}</li>
         </ul>
-
-        <div class="add-alert">
-          <input v-model="newAlert" placeholder="Nouvelle alerte..." />
+        <div class="add-block">
+          <input v-model="newAlertDescription" placeholder="Nouvelle alerte..." />
           <button @click="addAlert">Ajouter</button>
         </div>
 
         <h3>🎯 Activités</h3>
         <ul>
-          <li v-if="currentActivities.length === 0">Aucune activité</li>
-          <li v-for="(activity, i) in currentActivities" :key="'activity-' + i">{{ activity }}</li>
+          <li v-if="filteredActivities.length === 0">Aucune activité</li>
+          <li v-for="(act, i) in filteredActivities" :key="'act-' + i">
+            <strong>{{ act.titre }}</strong><br />
+            {{ act.description }}
+          </li>
         </ul>
+        <div class="add-block">
+          <input v-model="newActivityTitle" placeholder="Titre activité" />
+          <input v-model="newActivityDescription" placeholder="Description..." />
+          <button @click="addActivity">Ajouter</button>
+        </div>
 
         <button class="close-btn" @click="closePopup">Fermer</button>
       </div>
@@ -116,10 +149,10 @@ const water = {
 
 <style scoped>
 .map-container {
-  background-color: #f0f8ff;
-  border-radius: 12px;
+  background: #f8fbff;
+  border-radius: 16px;
   padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   width: 100%;
   height: 100%;
   position: relative;
@@ -127,91 +160,114 @@ const water = {
 
 .district {
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s ease, stroke-width 0.25s ease;
 }
 .district:hover {
-  opacity: 0.8;
+  opacity: 0.9;
 }
 .district.selected {
-  stroke: #000;
+  stroke: #003366;
   stroke-width: 3;
 }
 .district-number {
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 600;
   user-select: none;
   pointer-events: none;
 }
 
-/* POPUP */
+/* Popup overlay */
 .popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 50, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
 }
 
+/* Popup content */
 .popup-content {
-  background: white;
-  color: #003366;
+  background: #ffffff;
+  color: #1a1a1a;
   padding: 2rem;
-  border-radius: 12px;
-  width: 32vw;
-  max-height: 80vh;
+  border-radius: 16px;
+  width: 400px;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  animation: popup-fade 0.3s ease;
 }
+@keyframes popup-fade {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Titles */
 .popup-content h2 {
+  font-size: 1.5rem;
   margin-bottom: 1rem;
-  color: #007BFF;
+  color: #007bff;
 }
 .popup-content h3 {
+  font-size: 1.1rem;
   margin-top: 1.5rem;
   color: #0056b3;
 }
+
+/* List & alert/activity blocks */
 .popup-content ul {
   padding-left: 1.2rem;
   margin-bottom: 1rem;
 }
+.popup-content ul li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
 
-.add-alert {
+/* Add form blocks */
+.add-block {
+  margin: 1rem 0;
   display: flex;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 0.6rem;
 }
-.add-alert input {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #007BFF;
-  border-radius: 6px;
-  margin-right: 0.5rem;
+.add-block input {
+  padding: 0.6rem;
+  border: 1.5px solid #ced4da;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
 }
-.add-alert button {
-  background: #007BFF;
-  border: none;
+.add-block input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+.add-block button {
+  background-color: #007bff;
   color: white;
-  font-weight: bold;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
+  transition: background-color 0.25s ease;
 }
-.add-alert button:hover {
+.add-block button:hover {
   background-color: #0056b3;
 }
 
+/* Close button */
 .close-btn {
   background-color: #dc3545;
-  border: none;
   color: white;
-  font-weight: bold;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  margin-top: 1.5rem;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
+  transition: background-color 0.25s ease;
 }
 .close-btn:hover {
   background-color: #c82333;
